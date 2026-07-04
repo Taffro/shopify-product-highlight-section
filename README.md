@@ -1,3 +1,25 @@
+# Product Highlight — Shopify theme section
+
+A standalone section that lets a merchant pick **up to 4 products** in the theme
+customiser and shows them as a selector row plus one large "featured" panel.
+Selecting a product updates the featured panel (title, price, image) **without a
+page reload or network request due to it being in a web component**. 
+
+## Files
+
+| File | Role |
+| --- | --- |
+| `sections/product-highlight.liquid` | Markup + schema. |
+| `frontend/entrypoints/product-highlight.js` | Source of the `<product-highlight>` web component. |
+| `frontend/styles/product-highlight.css` | Source styles. |
+| `assets/product-highlight.{js,css}` | Built by Vite from `frontend/` — not committed. |
+
+## Decisions & trade-offs
+
+- **Blocks vs. `product_list`.** Blocks have been used so the client can drag and re-order products
+- **Price formatting.** Formatted with the `money` filter at render time so it
+  always matches store settings.
+
 ## Development
 
 Requires Node 18+ and the [Shopify CLI](https://shopify.dev/docs/api/shopify-cli).

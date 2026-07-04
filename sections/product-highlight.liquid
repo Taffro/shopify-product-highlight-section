@@ -17,66 +17,115 @@
   }
 {%- endstyle -%}
 
+{%- liquid
+  assign use_dynamic = section.settings.enable_dynamic_source
+  assign mf_namespace = 'custom'
+  assign mf_key = 'highlighted_products'
+  assign mo_products_field = 'products'
+
+  assign select_label = 'Select'
+  assign selected_label = 'Selected'
+  assign panel_id = section.id | append: '-ph-panel'
+
+  # Two data sources, normalised into one `items` list.
+  #   Block mode   -> section.blocks (each block carries a product object).
+  #   Dynamic mode -> a metaobject-reference metafield on the product or collection so that the section can pull in dynamic data
+  
+  assign items = section.blocks
+  if use_dynamic
+    assign mf_owner = product
+    if mf_owner == blank
+      assign mf_owner = collection
+    endif
+    assign mf = mf_owner.metafields[mf_namespace][mf_key]
+    assign handles = ''
+    if mf.type contains 'list'
+      for set in mf.value
+        for p in set[mo_products_field].value
+          if p != blank
+            assign handles = handles | append: p.handle | append: ','
+          endif
+        endfor
+      endfor
+    else
+      for p in mf.value[mo_products_field].value
+        if p != blank
+          assign handles = handles | append: p.handle | append: ','
+        endif
+      endfor
+    endif
+    assign items = handles | split: ','
+  endif
+
+  # Count valid products up front so we can render an accurate empty state.
+  assign valid_count = 0
+  for item in items limit: 4
+    if use_dynamic
+      assign ph_product = all_products[item]
+    else
+      assign ph_product = item.settings.product
+    endif
+    if ph_product != blank
+      assign valid_count = valid_count | plus: 1
+    endif
+  endfor
+-%}
+
 <div class="product-highlight-wrapper">
   {%- if section.settings.heading != blank -%}
     <h2 class="product-highlight__heading">{{ section.settings.heading | escape }}</h2>
   {%- endif -%}
 
-  {%- assign product_count = 0 -%}
-  {%- for block in section.blocks -%}
-    {%- if block.settings.product != blank -%}
-      {%- assign product_count = product_count | plus: 1 -%}
-    {%- endif -%}
-  {%- endfor -%}
-
-  {%- if product_count == 0 -%}
+  {%- if valid_count == 0 -%}
     {%- comment -%} Empty state keeps the section from looking broken in the editor. {%- endcomment -%}
     <p class="product-highlight__empty">
-      {{ 'No products selected yet. Add up to 4 products in the theme editor.' }}
+      {%- if use_dynamic -%}
+        No highlights set for this page yet. Assign one in this product or collection's metafields.
+      {%- else -%}
+        No products selected yet. Add up to 4 products in the theme editor.
+      {%- endif -%}
     </p>
   {%- else -%}
-    {%- assign select_label = 'Select' -%}
-    {%- assign selected_label = 'Selected' -%}
-    {%- assign panel_id = section.id | append: '-ph-panel' -%}
-
-    {%- assign featured_index = -1 -%}
-    {%- for block in section.blocks -%}
-      {%- if block.settings.product != blank and featured_index == -1 -%}
-        {%- assign featured_index = forloop.index0 -%}
-      {%- endif -%}
-    {%- endfor -%}
-
     <product-highlight
       class="product-highlight"
       data-section-id="{{ section.id }}"
       data-label-select="{{ select_label | escape }}"
       data-label-selected="{{ selected_label | escape }}"
     >
-      {%- for block in section.blocks -%}
-        {%- if block.settings.product != blank and forloop.index0 == featured_index -%}
-          {%- assign product = block.settings.product -%}
-          {%- capture featured_price -%}{% if product.price_varies %}{{ product.price_min | money }} – {{ product.price_max | money }}{% else %}{{ product.price | money }}{% endif %}{%- endcapture -%}
+      {%- comment -%} Featured panel: the first valid product. {%- endcomment -%}
+      {%- assign featured_done = false -%}
+      {%- for item in items limit: 4 -%}
+        {%- if use_dynamic -%}
+          {%- assign ph_product = all_products[item] -%}
+          {%- assign attrs = '' -%}
+        {%- else -%}
+          {%- assign ph_product = item.settings.product -%}
+          {%- assign attrs = item.shopify_attributes -%}
+        {%- endif -%}
+        {%- if ph_product != blank and featured_done == false -%}
+          {%- assign featured_done = true -%}
+          {%- capture featured_price -%}{% if ph_product.price_varies %}{{ ph_product.price_min | money }} – {{ ph_product.price_max | money }}{% else %}{{ ph_product.price | money }}{% endif %}{%- endcapture -%}
           <div
             class="product-highlight__featured"
             data-featured
             id="{{ panel_id }}"
             role="tabpanel"
             tabindex="0"
-            aria-labelledby="{{ section.id }}-ph-tab-{{ featured_index }}"
-            {{ block.shopify_attributes }}
+            aria-labelledby="{{ section.id }}-ph-tab-0"
+            {{ attrs }}
           >
-            <a class="product-highlight__featured-link" data-featured-link href="{{ product.url }}">
-              {%- if product.featured_image -%}
+            <a class="product-highlight__featured-link" data-featured-link href="{{ ph_product.url }}">
+              {%- if ph_product.featured_image -%}
                 <img
                   class="product-highlight__featured-image"
                   data-featured-image
-                  src="{{ product.featured_image | image_url: width: 800, height: 800, crop: 'center' }}"
-                  srcset="{{ product.featured_image | image_url: width: 400, height: 400, crop: 'center' }} 400w,
-                          {{ product.featured_image | image_url: width: 800, height: 800, crop: 'center' }} 800w"
+                  src="{{ ph_product.featured_image | image_url: width: 800, height: 800, crop: 'center' }}"
+                  srcset="{{ ph_product.featured_image | image_url: width: 400, height: 400, crop: 'center' }} 400w,
+                          {{ ph_product.featured_image | image_url: width: 800, height: 800, crop: 'center' }} 800w"
                   sizes="(min-width: 750px) 50vw, 100vw"
                   width="800"
                   height="800"
-                  alt="{{ product.featured_image.alt | escape }}"
+                  alt="{{ ph_product.featured_image.alt | escape }}"
                   loading="lazy"
                 >
               {%- else -%}
@@ -84,13 +133,13 @@
               {%- endif -%}
             </a>
             <div class="product-highlight__featured-info">
-              <h3 class="product-highlight__featured-title" data-featured-title>{{ product.title | escape }}</h3>
+              <h3 class="product-highlight__featured-title" data-featured-title>{{ ph_product.title | escape }}</h3>
               <p class="product-highlight__featured-price" data-featured-price>{{ featured_price }}</p>
               <a
                 class="product-highlight__view"
                 data-featured-cta
-                href="{{ product.url }}"
-                aria-label="View product: {{ product.title | escape }}"
+                href="{{ ph_product.url }}"
+                aria-label="View product: {{ ph_product.title | escape }}"
               >View product</a>
             </div>
           </div>
@@ -98,42 +147,51 @@
       {%- endfor -%}
 
       <ul class="product-highlight__list" role="tablist" aria-label="{{ section.settings.heading | default: 'Highlighted products' | escape }}">
-        {%- for block in section.blocks -%}
-          {%- if block.settings.product != blank -%}
-            {%- assign product = block.settings.product -%}
+        {%- assign tab_i = 0 -%}
+        {%- for item in items limit: 4 -%}
+          {%- if use_dynamic -%}
+            {%- assign ph_product = all_products[item] -%}
+            {%- assign attrs = '' -%}
+          {%- else -%}
+            {%- assign ph_product = item.settings.product -%}
+            {%- assign attrs = item.shopify_attributes -%}
+          {%- endif -%}
+          {%- if ph_product != blank -%}
+            {%- comment -%} The first valid product (tab_i 0) is selected on load. {%- endcomment -%}
             {%- assign is_selected = false -%}
-            {%- if forloop.index0 == featured_index -%}{%- assign is_selected = true -%}{%- endif -%}
-            {%- capture price_text -%}{% if product.price_varies %}{{ product.price_min | money }} – {{ product.price_max | money }}{% else %}{{ product.price | money }}{% endif %}{%- endcapture -%}
-            <li class="product-highlight__item" {{ block.shopify_attributes }}>
+            {%- if tab_i == 0 -%}{%- assign is_selected = true -%}{%- endif -%}
+            {%- capture price_text -%}{% if ph_product.price_varies %}{{ ph_product.price_min | money }} – {{ ph_product.price_max | money }}{% else %}{{ ph_product.price | money }}{% endif %}{%- endcapture -%}
+            <li class="product-highlight__item" {{ attrs }}>
               <button
                 type="button"
                 class="product-highlight__selector"
-                id="{{ section.id }}-ph-tab-{{ forloop.index0 }}"
+                id="{{ section.id }}-ph-tab-{{ tab_i }}"
                 role="tab"
                 aria-controls="{{ panel_id }}"
                 aria-selected="{{ is_selected }}"
                 tabindex="{% if is_selected %}0{% else %}-1{% endif %}"
                 data-selector
-                data-index="{{ forloop.index0 }}"
-                data-title="{{ product.title | escape }}"
+                data-index="{{ tab_i }}"
+                data-title="{{ ph_product.title | escape }}"
                 data-price="{{ price_text | strip_html | strip | escape }}"
-                data-url="{{ product.url }}"
-                data-image="{{ product.featured_image | image_url: width: 800, height: 800, crop: 'center' }}"
-                data-image-400="{{ product.featured_image | image_url: width: 400, height: 400, crop: 'center' }}"
-                data-image-alt="{{ product.featured_image.alt | escape }}"
+                data-url="{{ ph_product.url }}"
+                data-image="{{ ph_product.featured_image | image_url: width: 800, height: 800, crop: 'center' }}"
+                data-image-400="{{ ph_product.featured_image | image_url: width: 400, height: 400, crop: 'center' }}"
+                data-image-alt="{{ ph_product.featured_image.alt | escape }}"
               >
                 <span class="product-highlight__selector-media">
-                  {%- if product.featured_image -%}
-                    <img src="{{ product.featured_image | image_url: width: 300, height: 300, crop: 'center' }}" width="300" height="300" alt="" loading="lazy">
+                  {%- if ph_product.featured_image -%}
+                    <img src="{{ ph_product.featured_image | image_url: width: 300, height: 300, crop: 'center' }}" width="300" height="300" alt="" loading="lazy">
                   {%- else -%}
                     {{ 'product-1' | placeholder_svg_tag: 'product-highlight__placeholder' }}
                   {%- endif -%}
                 </span>
-                <span class="product-highlight__selector-title">{{ product.title | escape }}</span>
+                <span class="product-highlight__selector-title">{{ ph_product.title | escape }}</span>
                 <span class="product-highlight__selector-price">{{ price_text }}</span>
                 <span class="product-highlight__selector-cta" aria-hidden="true" data-cta>{% if is_selected %}{{ selected_label }}{% else %}{{ select_label }}{% endif %}</span>
               </button>
             </li>
+            {%- assign tab_i = tab_i | plus: 1 -%}
           {%- endif -%}
         {%- endfor -%}
       </ul>
@@ -163,6 +221,17 @@
       "step": 4,
       "unit": "px",
       "default": 16
+    },
+    {
+      "type": "header",
+      "content": "Highlights set"
+    },
+    {
+      "type": "checkbox",
+      "id": "enable_dynamic_source",
+      "label": "Use this page's highlights set",
+      "info": "When on, this section shows the products from the highlights set assigned to the current product or collection — instead of the products you pick via blocks. Handy for reusing the same set across many pages. Works on product and collection pages.",
+      "default": false
     }
   ],
   "blocks": [

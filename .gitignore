@@ -1,0 +1,45 @@
+# --- AI-generated metadata / assistant caches ---------------------------
+.aider*
+.cursor/
+.cursorignore
+.cursorrules
+.copilot/
+.github/copilot-instructions.md
+.claude/
+.continue/
+.windsurf/
+.codeium/
+
+# --- Node -----------------------------------------------------------------
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.pnpm-store/
+
+# Note: the Vite build output (assets/product-highlight.{js,css}) IS committed
+# so the theme runs without a build step. Rebuild with `npm run build`.
+
+# --- Shopify CLI ----------------------------------------------------------
+.shopify/
+
+# --- Environment / secrets ------------------------------------------------
+.env
+.env.*
+!.env.example
+
+# --- OS files -------------------------------------------------------------
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# --- Editor / misc --------------------------------------------------------
+*.log
+.vscode/
+.idea/

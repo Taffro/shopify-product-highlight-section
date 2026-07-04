@@ -1,0 +1,21 @@
+{
+  "name": "shopify-product-highlight-section",
+  "version": "1.0.0",
+  "description": "Shopify theme with a standalone Product Highlight section, built with Vite.",
+  "private": true,
+  "scripts": {
+    "dev": "vite build --watch --mode development",
+    "build": "vite build",
+    "shopify": "shopify theme dev",
+    "shopify-sync": "shopify theme dev --theme-editor-sync",
+    "start": "concurrently -n vite,shopify -c blue,green \"npm:dev\" \"npm:shopify\""
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "devDependencies": {
+    "@shopify/cli": "^3.84.1",
+    "concurrently": "^9.1.0",
+    "vite": "^6.0.0"
+  }
+}

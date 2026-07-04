@@ -14,7 +14,8 @@ class ProductHighlight extends HTMLElement {
     this.panel = this.querySelector('[data-featured]');
     this.featured = {
       link: this.querySelector('[data-featured-link]'),
-      image: this.querySelector('[data-featured-image]'),
+      // image_tag doesn't take a data-* hook, so target the featured img by class.
+      image: this.querySelector('img.product-highlight__featured-image'),
       title: this.querySelector('[data-featured-title]'),
       price: this.querySelector('[data-featured-price]'),
       cta: this.querySelector('[data-featured-cta]'),

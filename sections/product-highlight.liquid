@@ -116,18 +116,17 @@
           >
             <a class="product-highlight__featured-link" data-featured-link href="{{ ph_product.url }}">
               {%- if ph_product.featured_image -%}
-                <img
-                  class="product-highlight__featured-image"
-                  data-featured-image
-                  src="{{ ph_product.featured_image | image_url: width: 800, height: 800, crop: 'center' }}"
-                  srcset="{{ ph_product.featured_image | image_url: width: 400, height: 400, crop: 'center' }} 400w,
-                          {{ ph_product.featured_image | image_url: width: 800, height: 800, crop: 'center' }} 800w"
-                  sizes="(min-width: 750px) 50vw, 100vw"
-                  width="800"
-                  height="800"
-                  alt="{{ ph_product.featured_image.alt | escape }}"
-                  loading="lazy"
-                >
+                {{
+                  ph_product.featured_image
+                  | image_url: width: 800, height: 800, crop: 'center'
+                  | image_tag:
+                    loading: 'lazy',
+                    width: 800,
+                    height: 800,
+                    sizes: '(min-width: 750px) 50vw, 100vw',
+                    widths: '400, 800',
+                    class: 'product-highlight__featured-image'
+                }}
               {%- else -%}
                 {{ 'product-1' | placeholder_svg_tag: 'product-highlight__featured-image product-highlight__placeholder' }}
               {%- endif -%}
@@ -181,7 +180,12 @@
               >
                 <span class="product-highlight__selector-media">
                   {%- if ph_product.featured_image -%}
-                    <img src="{{ ph_product.featured_image | image_url: width: 300, height: 300, crop: 'center' }}" width="300" height="300" alt="" loading="lazy">
+                    {%- comment -%} alt is intentionally empty: the title text beside it is the label. {%- endcomment -%}
+                    {{
+                      ph_product.featured_image
+                      | image_url: width: 300, height: 300, crop: 'center'
+                      | image_tag: loading: 'lazy', width: 300, height: 300, alt: ''
+                    }}
                   {%- else -%}
                     {{ 'product-1' | placeholder_svg_tag: 'product-highlight__placeholder' }}
                   {%- endif -%}

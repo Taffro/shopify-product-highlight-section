@@ -6,8 +6,8 @@
   "scripts": {
     "dev": "vite build --watch --mode development",
     "build": "vite build",
-    "shopify": "shopify theme dev",
-    "shopify-sync": "shopify theme dev --theme-editor-sync",
+    "shopify": "shopify theme dev --store lucky-hedgehog-co.myshopify.com",
+    "shopify-sync": "shopify theme dev --store lucky-hedgehog-co.myshopify.com --theme-editor-sync",
     "start": "concurrently -n vite,shopify -c blue,green \"npm:dev\" \"npm:shopify\""
   },
   "engines": {
